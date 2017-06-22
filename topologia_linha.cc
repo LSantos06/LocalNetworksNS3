@@ -19,19 +19,33 @@
 
 // Topologia:
 //
-//    Wifi 10.1.8.0                     Wifi 10.1.9.0                     Wifi 10.1.10.0                    Wifi 10.1.11.0
-//  AP              AP                AP              AP                AP              AP                AP
-//  *    *     *    *                 *    *     *    *                 *    *     *    *                 *    *     *    *
-//  |    | ... |    |    10.1.3.0     |    | ... |    |     10.1.4.0    |    | ... |    |     10.1.5.0    |    | ... |    |
-//  n1   n     n    n4 -------------- n5   n     n    n6 -------------- n7   n     n    n8 -------------- n9   n     n    n
-//  :                  point-to-point                    point-to-point                    point-to-point
-//  :
-//  :
-//  :  10.1.1.0                          10.1.2.0
-//  -------------- n0   n     n    n2 -------------- n3   n     n    n
-//  point-to-point |    | ... |    |  point-to-point |    | ... |    |
-//                 =================                 =================
-//                   LAN 10.1.6.0                      LAN 10.1.7.0
+//   Wifi 10.1.8.0
+//                 AP
+//  *    *    *    *     10.1.2.0
+//  |    |....|    |  point-to-point
+//  n    n    n   n2 ---------------- n1    n    n    n
+//                 :                   |    |....|    |
+//                 :                   ================
+//     10.1.3.0    :                   : LAN 10.1.7.0
+//  point-to-point :                   :
+//                 :                   :
+//                 :                   :    10.1.1.0
+//   Wifi 10.1.9.0 :                   : point-to-point
+//                 AP                  :
+//  *    *    *    *                   :
+//  |    |....|    |                   :
+//  n    n    n   n3                  n0    n    n    n
+//                 :                   |    |....|    |
+//                 :                   ================
+//     10.1.4.0    :                     LAN 10.1.6.0
+//  point-to-point :
+//                 :
+//                 :      10.1.5.0
+//  Wifi 10.1.10.0 :   point-to-point    Wifi 10.1.11.0
+//                 AP ---------------- AP
+//  *    *    *    *                   *    *    *    *
+//  |    |....|    |                   |    |....|    |
+//  n    n    n   n4                  n5    n    n    n
 //
 
  using namespace ns3;
@@ -44,12 +58,8 @@ int main (int argc, char *argv[]){
 
   /***** ENLACE *****/
   // Number of devices CSMA and WiFi
-  uint32_t nCsma6 = 2;
-  uint32_t nCsma7 = 3;
-  uint32_t nWifi8 = 2;
-  uint32_t nWifi9 = 2;
-  uint32_t nWifi10 = 2;
-  uint32_t nWifi11 = 3;
+  uint32_t nCsma = 3;
+  uint32_t nWifi = 3;
 
   /** CMD **/
   // Command line parameters for enabling or disbling components
@@ -70,11 +80,15 @@ int main (int argc, char *argv[]){
   NodeContainer p2pNodes3;
   NodeContainer p2pNodes4;
   NodeContainer p2pNodes5;
-  p2pNodes1.Create (2);
-  p2pNodes2.Create (2);
-  p2pNodes3.Create (2);
-  p2pNodes4.Create (2);
-  p2pNodes5.Create (2);
+  p2pNodes1.Create (1); // n0
+  p2pNodes2.Create (1); // n1
+  p2pNodes3.Create (1); // n2
+  p2pNodes4.Create (1); // n3
+  p2pNodes5.Create (2); // n4, n5
+  p2pNodes1.Add (p2pNodes2.Get (0)); // n0 + n1
+  p2pNodes2.Add (p2pNodes3.Get (0)); // n1 + n2
+  p2pNodes3.Add (p2pNodes4.Get (0)); // n2 + n3
+  p2pNodes4.Add (p2pNodes5.Get (0)); // n3 + n4
   // Set the associated default attributes
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
@@ -94,75 +108,88 @@ int main (int argc, char *argv[]){
   /** CSMAs **/
   // Hold the nodes that will be part of the bus (CSMA) network
   NodeContainer csmaNodes6; // 6
+
   NodeContainer csmaNodes7; // 7
+
   // Gets the nodes from the p2p nodes and adds it to the container of nodes that will get CSMA devices
   // The nodes in question are going to end up with a p2p device and a CSMA device
-  csmaNodes6.Add (p2pNodes1.Get (0)); //n0
-  csmaNodes6.Add (p2pNodes2.Get (0)); //n2 // 6
-
-  csmaNodes7.Add (p2pNodes2.Get (1)); //n3 // 7
-
   // We then create a number of "extra" nodes that compose the reaminder of CSMA network
-  csmaNodes6.Create (nCsma6); // 6
-  csmaNodes7.Create (nCsma7); // 7
+  csmaNodes6.Add (p2pNodes1.Get (0)); //n0
+  csmaNodes6.Create (nCsma); // 6
+
+  csmaNodes7.Add (p2pNodes1.Get (1)); //n1
+  csmaNodes7.Create (nCsma); // 7
+
   // We then instantiate a CsmaHelper and set its Attributes
   CsmaHelper csma6;
   csma6.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
   csma6.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (6560))); // 6
+
   CsmaHelper csma7;
   csma7.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
   csma7.SetChannelAttribute ("Delay", TimeValue (NanoSeconds (6560))); // 7
+
   // We create a NetDeviceContainer to keep track of the created CSMA net devices and then we Install CSMA devices on the selected nodes
   NetDeviceContainer csmaDevices6;
   csmaDevices6 = csma6.Install (csmaNodes6); // 6
+
   NetDeviceContainer csmaDevices7;
   csmaDevices7 = csma7.Install (csmaNodes7); // 7
 
   /** WIFI **/
   // Creating the nodes that will be part of the Wifi network
   NodeContainer wifiStaNodes8;
-  wifiStaNodes8.Create (nWifi8);
-  NodeContainer wifiApNode8 = p2pNodes1.Get (1); //n1
-  wifiApNode8.Add(p2pNodes3.Get (0)); //n4 // 8
+  wifiStaNodes8.Create (nWifi);
+  NodeContainer wifiApNode8 = p2pNodes3.Get (0); //n2 // 8
 
   NodeContainer wifiStaNodes9;
-  wifiStaNodes9.Create (nWifi9);
-  NodeContainer wifiApNode9 = p2pNodes3.Get (1); //n5
-  wifiApNode9.Add(p2pNodes4.Get (0)); //n6 // 9
+  wifiStaNodes9.Create (nWifi);
+  NodeContainer wifiApNode9 = p2pNodes4.Get (0); //n3 // 9
 
   NodeContainer wifiStaNodes10;
-  wifiStaNodes10.Create (nWifi10);
-  NodeContainer wifiApNode10 = p2pNodes4.Get (1); //n7
-  wifiApNode10.Add(p2pNodes5.Get (0)); //n8 // 10
+  wifiStaNodes10.Create (nWifi);
+  NodeContainer wifiApNode10 = p2pNodes5.Get (0); //n4 // 10
 
   NodeContainer wifiStaNodes11;
-  wifiStaNodes11.Create (nWifi11);
-  NodeContainer wifiApNode11 = p2pNodes5.Get (1); //n9 // 11
+  wifiStaNodes11.Create (nWifi);
+  NodeContainer wifiApNode11 = p2pNodes5.Get (1); //n5 // 11
 
   // Default PHY layer configuration
   YansWifiChannelHelper channel8 = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy8 = YansWifiPhyHelper::Default (); // 8
+
   YansWifiChannelHelper channel9 = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy9 = YansWifiPhyHelper::Default (); // 9
+
   YansWifiChannelHelper channel10 = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy10 = YansWifiPhyHelper::Default (); // 10
+
   YansWifiChannelHelper channel11 = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy11 = YansWifiPhyHelper::Default (); // 11
+
   // Creating a channel object and associating it to our PHY layer
   // All the PHY layer objects share the same wirelles medium and can communicate and interfere
   phy8.SetChannel (channel8.Create ()); // 8
+
   phy9.SetChannel (channel9.Create ()); // 9
+
   phy10.SetChannel (channel10.Create ()); // 10
+
   phy11.SetChannel (channel11.Create ()); // 11
+
   // MAC layer
   WifiHelper wifi8;
   wifi8.SetRemoteStationManager ("ns3::AarfWifiManager"); // 8
+
   WifiHelper wifi9;
   wifi9.SetRemoteStationManager ("ns3::AarfWifiManager"); // 9
+
   WifiHelper wifi10;
   wifi10.SetRemoteStationManager ("ns3::AarfWifiManager"); // 10
+
   WifiHelper wifi11;
   wifi11.SetRemoteStationManager ("ns3::AarfWifiManager"); // 11
+
   WifiMacHelper mac;
   // SSID of the infrastructure network
   Ssid ssid = Ssid ("ns-3-ssid");
@@ -174,24 +201,32 @@ int main (int argc, char *argv[]){
   // Creating wifi devices of these stations
   NetDeviceContainer staDevices8;
   staDevices8 = wifi8.Install (phy8, mac, wifiStaNodes8); // 8
+
   NetDeviceContainer staDevices9;
   staDevices9 = wifi9.Install (phy9, mac, wifiStaNodes9); // 9
+
   NetDeviceContainer staDevices10;
   staDevices10 = wifi10.Install (phy10, mac, wifiStaNodes10); // 10
+
   NetDeviceContainer staDevices11;
   staDevices11 = wifi11.Install (phy11, mac, wifiStaNodes11); // 11
+
   // Configuring access point node
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid));
   // Creating AP nodes
   NetDeviceContainer apDevices8;
   apDevices8 = wifi8.Install (phy8, mac, wifiApNode8); // 8
+
   NetDeviceContainer apDevices9;
   apDevices9 = wifi9.Install (phy9, mac, wifiApNode9); // 9
+
   NetDeviceContainer apDevices10;
   apDevices10 = wifi10.Install (phy10, mac, wifiApNode10); // 10
+
   NetDeviceContainer apDevices11;
   apDevices11 = wifi11.Install (phy11, mac, wifiApNode11); // 11
+
   // STA nodes to be mobile, wandering around inside a bounding box, and we want to make the AP node stationary
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -206,14 +241,21 @@ int main (int argc, char *argv[]){
                              "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
   // Installing mobility models on the STA nodes
   mobility.Install (wifiStaNodes8); // 8
+
   mobility.Install (wifiStaNodes9); // 9
+
   mobility.Install (wifiStaNodes10); // 10
+
   mobility.Install (wifiStaNodes11); // 11
+
   // Installing mobility (fixed position) on the AP nodes
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode8); // 8
+
   mobility.Install (wifiApNode9); // 9
+
   mobility.Install (wifiApNode10); // 10
+
   mobility.Install (wifiApNode11); // 11
 
   /***** REDE *****/
@@ -221,10 +263,12 @@ int main (int argc, char *argv[]){
   InternetStackHelper stack;
   stack.Install (csmaNodes6); // 6
   stack.Install (csmaNodes7); // 7
+
   stack.Install (wifiApNode8); // 8
   stack.Install (wifiApNode9); // 9
   stack.Install (wifiApNode10); // 10
   stack.Install (wifiApNode11); // 11
+
   stack.Install (wifiStaNodes8); // 8
   stack.Install (wifiStaNodes9); // 9
   stack.Install (wifiStaNodes10); // 10
@@ -236,35 +280,45 @@ int main (int argc, char *argv[]){
   address.SetBase ("10.1.1.0", "255.255.255.0");
   Ipv4InterfaceContainer p2pInterfaces1;
   p2pInterfaces1 = address.Assign (p2pDevices1); // 1
+
   address.SetBase ("10.1.2.0", "255.255.255.0");
   Ipv4InterfaceContainer p2pInterfaces2;
   p2pInterfaces2 = address.Assign (p2pDevices2); // 2
+
   address.SetBase ("10.1.3.0", "255.255.255.0");
   Ipv4InterfaceContainer p2pInterfaces3;
   p2pInterfaces3 = address.Assign (p2pDevices3); // 3
+
   address.SetBase ("10.1.4.0", "255.255.255.0");
   Ipv4InterfaceContainer p2pInterfaces4;
   p2pInterfaces4 = address.Assign (p2pDevices4); // 4
+
   address.SetBase ("10.1.5.0", "255.255.255.0");
   Ipv4InterfaceContainer p2pInterfaces5;
   p2pInterfaces5 = address.Assign (p2pDevices5); // 5
+
   // CSMA
   address.SetBase ("10.1.6.0", "255.255.255.0");
   Ipv4InterfaceContainer csmaInterfaces6;
   csmaInterfaces6 = address.Assign (csmaDevices6); // 6
+
   address.SetBase ("10.1.7.0", "255.255.255.0");
   Ipv4InterfaceContainer csmaInterfaces7;
   csmaInterfaces7 = address.Assign (csmaDevices7); // 7
+
   // WIFI
   address.SetBase ("10.1.8.0", "255.255.255.0");
   address.Assign (staDevices8);
   address.Assign (apDevices8); // 8
+
   address.SetBase ("10.1.9.0", "255.255.255.0");
   address.Assign (staDevices9);
   address.Assign (apDevices9); // 9
+
   address.SetBase ("10.1.10.0", "255.255.255.0");
   address.Assign (staDevices10);
   address.Assign (apDevices10); // 10
+
   address.SetBase ("10.1.11.0", "255.255.255.0");
   address.Assign (staDevices11);
   address.Assign (apDevices11); // 11
@@ -272,16 +326,16 @@ int main (int argc, char *argv[]){
   // Setting up the echo port
   UdpEchoServerHelper echoServer (9);
   // Getting the rightmost node
-  ApplicationContainer serverApps = echoServer.Install (csmaNodes7.Get (nCsma7));
+  ApplicationContainer serverApps = echoServer.Install (csmaNodes6.Get (nCsma));
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
-  UdpEchoClientHelper echoClient (csmaInterfaces7.GetAddress (nCsma7), 9);
+  UdpEchoClientHelper echoClient (csmaInterfaces6.GetAddress (nCsma), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
   // Echo client on the last STA node created
   ApplicationContainer clientApps =
-    echoClient.Install (wifiStaNodes11.Get (nWifi11-1));
+    echoClient.Install (wifiStaNodes11.Get (nWifi-1));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
   // Enabling internetwork
