@@ -336,7 +336,7 @@ int main (int argc, char *argv[]){
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
   // Echo client on the last STA node created
   ApplicationContainer clientApps =
-    echoClient.Install (wifiStaNodes11.Get (nWifi-1));
+    echoClient.Install (wifiStaNodes11);
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
   // Enabling internetwork
@@ -366,7 +366,7 @@ int main (int argc, char *argv[]){
   Simulator::Run ();
 
   // Print per flow statistics in xml file
-  flowMonitor->SerializeToXmlFile("statistics.xml", true, true);
+  // flowmon->SerializeToXmlFile("statistics.xml", true, true);
 
   // Print per flow statistics
   monitor->CheckForLostPackets ();
