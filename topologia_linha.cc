@@ -59,8 +59,8 @@ int main (int argc, char *argv[]){
 
   /***** ENLACE *****/
   // Number of devices CSMA and WiFi
-  uint32_t nCsma = 3;
-  uint32_t nWifi = 3;
+  uint32_t nCsma = 12;
+  uint32_t nWifi = 12;
 
   /** CMD **/
   // Command line parameters for enabling or disbling components
@@ -235,11 +235,10 @@ int main (int argc, char *argv[]){
                                  "MinY", DoubleValue (0.0),
                                  "DeltaX", DoubleValue (5.0),
                                  "DeltaY", DoubleValue (10.0),
-                                 "GridWidth", UintegerValue (3),
+                                 "GridWidth", UintegerValue (sqrt(nWifi)),
                                  "LayoutType", StringValue ("RowFirst"));
-
   mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
+                             "Bounds", RectangleValue (Rectangle (-150, 150, -150, 150)));
   // Installing mobility models on the STA nodes
   mobility.Install (wifiStaNodes8); // 8
 
@@ -326,17 +325,21 @@ int main (int argc, char *argv[]){
 
   // Setting up the echo port
   UdpEchoServerHelper echoServer (9);
-  // Getting the rightmost node
+  // SERVER => The rightmost node
   ApplicationContainer serverApps = echoServer.Install (csmaNodes6.Get (nCsma));
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
+  // SERVER <=> CLIENT
   UdpEchoClientHelper echoClient (csmaInterfaces6.GetAddress (nCsma), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
-  // Echo client on the last STA node created
+  // CLIENTS => 10 for each network
   ApplicationContainer clientApps =
-    echoClient.Install (wifiStaNodes11);
+    echoClient.Install (wifiStaNodes8);
+  clientApps.Add(echoClient.Install (wifiStaNodes9));
+  clientApps.Add(echoClient.Install (wifiStaNodes10));
+  clientApps.Add(echoClient.Install (wifiStaNodes11));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
   // Enabling internetwork
@@ -360,7 +363,7 @@ int main (int argc, char *argv[]){
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll ();
 
-  NS_LOG_UNCOND(":::::::::: Simulation ::::::::::");
+  NS_LOG_UNCOND(":::::::::: SIMULATION ::::::::::\n");
   // Run simulation for 10 seconds
   Simulator::Stop (Seconds (10));
   Simulator::Run ();
@@ -373,10 +376,10 @@ int main (int argc, char *argv[]){
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
   std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
 
-  NS_LOG_UNCOND("\n:::::::::: Statistics ::::::::::");
+  NS_LOG_UNCOND("\n:::::::::: STATISTICS ::::::::::");
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator iter = stats.begin (); iter != stats.end (); ++iter){
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (iter->first);
-    NS_LOG_UNCOND("Flow ID (" << iter->first << ") Src Addr " << t.sourceAddress << " Dst Addr " << t.destinationAddress);
+    NS_LOG_UNCOND("\nFlow ID (" << iter->first << ") " << t.sourceAddress << " => " << t.destinationAddress);
     NS_LOG_UNCOND("Tx Packets = " << iter->second.txPackets);
     NS_LOG_UNCOND("Tx Bytes = " << iter->second.txBytes);
     NS_LOG_UNCOND("Tx offered = " << iter->second.txBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
