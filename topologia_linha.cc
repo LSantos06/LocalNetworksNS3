@@ -6,6 +6,7 @@
 #include "ns3/mobility-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
+#include "ns3/flow-monitor-module.h"
 
 /* Requisitos:
  * a) Ao menos duas redes Ethernet (padrão 802.3);
@@ -65,7 +66,7 @@ int main (int argc, char *argv[]){
   // Command line parameters for enabling or disbling components
   CommandLine cmd;
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
-  cmd.AddValue ("tracing", "Enable pcap tracing", tracing);
+  cmd.AddValue ("tracing", "Disable pcap tracing", tracing);
   cmd.Parse (argc,argv);
   if (verbose)
     {
@@ -355,7 +356,37 @@ int main (int argc, char *argv[]){
       csma7.EnablePcap ("proj_2_tr1_7", csmaDevices7.Get (0), true);
     }
 
+  // Install FlowMonitor on all nodes
+  FlowMonitorHelper flowmon;
+  Ptr<FlowMonitor> monitor = flowmon.InstallAll ();
+
+  NS_LOG_UNCOND(":::::::::: Simulation ::::::::::");
+  // Run simulation for 10 seconds
+  Simulator::Stop (Seconds (10));
   Simulator::Run ();
+
+  // Print per flow statistics in xml file
+  flowMonitor->SerializeToXmlFile("statistics.xml", true, true);
+
+  // Print per flow statistics
+  monitor->CheckForLostPackets ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+
+  NS_LOG_UNCOND("\n:::::::::: Statistics ::::::::::");
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator iter = stats.begin (); iter != stats.end (); ++iter){
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (iter->first);
+    NS_LOG_UNCOND("Flow ID (" << iter->first << ") Src Addr " << t.sourceAddress << " Dst Addr " << t.destinationAddress);
+    NS_LOG_UNCOND("Tx Packets = " << iter->second.txPackets);
+    NS_LOG_UNCOND("Tx Bytes = " << iter->second.txBytes);
+    NS_LOG_UNCOND("Tx offered = " << iter->second.txBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
+    NS_LOG_UNCOND("Rx Packets = " << iter->second.rxPackets);
+    NS_LOG_UNCOND("Rx Packets = " << iter->second.rxBytes);
+    NS_LOG_UNCOND("Throughput: " << iter->second.rxBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
+  }
+
+  // End simulation
   Simulator::Destroy ();
+
   return 0;
 }
