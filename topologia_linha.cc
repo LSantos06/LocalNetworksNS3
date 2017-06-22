@@ -54,7 +54,7 @@
 
 int main (int argc, char *argv[]){
   bool verbose = true;
-  bool tracing = false;
+  bool tracing = true;
 
   /***** ENLACE *****/
   // Number of devices CSMA and WiFi
@@ -347,12 +347,12 @@ int main (int argc, char *argv[]){
   if (tracing == true)
     {
       pointToPoint.EnablePcapAll ("proj_2_tr1");
-      phy8.EnablePcap ("proj_2_tr1", apDevices8.Get (0));
-      phy9.EnablePcap ("proj_2_tr1", apDevices9.Get (0));
-      phy10.EnablePcap ("proj_2_tr1", apDevices10.Get (0));
-      phy11.EnablePcap ("proj_2_tr1", apDevices11.Get (0));
-      csma6.EnablePcap ("proj_2_tr1", csmaDevices6.Get (0), true);
-      csma7.EnablePcap ("proj_2_tr1", csmaDevices7.Get (0), true);
+      phy8.EnablePcap ("proj_2_tr1_8", apDevices8.Get (0));
+      phy9.EnablePcap ("proj_2_tr1_9", apDevices9.Get (0));
+      phy10.EnablePcap ("proj_2_tr1_10", apDevices10.Get (0));
+      phy11.EnablePcap ("proj_2_tr1_11", apDevices11.Get (0));
+      csma6.EnablePcap ("proj_2_tr1_6", csmaDevices6.Get (0), true);
+      csma7.EnablePcap ("proj_2_tr1_7", csmaDevices7.Get (0), true);
     }
 
   Simulator::Run ();
