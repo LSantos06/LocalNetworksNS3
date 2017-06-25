@@ -35,7 +35,7 @@
 //                 AP                  :
 //  *    *    *    *                   :
 //  |    |....|    |                   :
-//  n    n    n   n3                  n0    n    n    n
+//  n    n    n   n3                  n0    n    n   [n]
 //                 :                   |    |....|    |
 //                 :                   ================
 //     10.1.4.0    :                     LAN 10.1.6.0
@@ -340,6 +340,8 @@ int main (int argc, char *argv[]){
   clientApps.Add(echoClient.Install (wifiStaNodes9));
   clientApps.Add(echoClient.Install (wifiStaNodes10));
   clientApps.Add(echoClient.Install (wifiStaNodes11));
+  clientApps.Add(echoClient.Install (csmaNodes6));
+  clientApps.Add(echoClient.Install (csmaNodes7));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
   // Enabling internetwork
