@@ -54,12 +54,12 @@
 
 
 using namespace ns3;
-using namespace std; 
+using namespace std;
 
 int main(int argc,char *argv[]){
 	bool verbose = true;
 	bool tracing = true;
-	
+
 
   /***** ENLACE *****/
   // Number of devices CSMA and WiFi
@@ -80,15 +80,15 @@ int main(int argc,char *argv[]){
   /** P2P **/
   // Number of nodes that we will connect via p2p link
 	int nP2p = 5;
-	NodeContainer p2pNodes[nP2p];	
+	NodeContainer p2pNodes[nP2p];
 
 	for(int i=0;i< nP2p-1 ;i++)
-		p2pNodes[i].Create(1);	
+		p2pNodes[i].Create(1);
 	p2pNodes[4].Create(2);
 
 	for(int i=0;i< nP2p-1 ;i++)
 		p2pNodes[i].Add(p2pNodes[i+1].Get(0)); // n_i + n_(i+1)
-	
+
   // Set the associated default attributes
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
@@ -106,7 +106,7 @@ int main(int argc,char *argv[]){
   // Gets the nodes from the p2p nodes and adds it to the container of nodes that will get CSMA devices
   // The nodes in question are going to end up with a p2p device and a CSMA device
   // We then create a number of "extra" nodes that compose the reaminder of CSMA network
-	
+
   // We then instantiate a CsmaHelper and set its Attributes
 	CsmaHelper csma[2];
 	NetDeviceContainer csmaDevices[2];
@@ -117,12 +117,12 @@ int main(int argc,char *argv[]){
 
 		csma[i].SetChannelAttribute ("DataRate", StringValue("100Mbps"));
 		csma[i].SetChannelAttribute ("Delay", TimeValue(NanoSeconds(6560)));
-		
+
 		csmaDevices[i] = csma[i].Install(csmaNodes[i]);
 	}
 
 	//** WIFI **//
-	
+
 	NodeContainer wifiStaNodes[4];
 	NodeContainer wifiApNode[4];
 	for(int i=0;i<3;i++){
@@ -153,7 +153,7 @@ int main(int argc,char *argv[]){
 	macA.SetType("ns3::ApWifiMac","Ssid",SsidValue(ssid));
 	// Creating Ap Nodes
 	NetDeviceContainer apDevices[4];
-	
+
 
   // STA nodes to be mobile, wandering around inside a bounding box, and we want to make the AP node stationary
   MobilityHelper mobility;
@@ -164,7 +164,9 @@ int main(int argc,char *argv[]){
                                  "DeltaY", DoubleValue (10.0),
                                  "GridWidth", UintegerValue (sqrt(nWifi)),
                                  "LayoutType", StringValue ("RowFirst"));
-
+  // Installing mobility models on the STA nodes
+	mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                          "Bounds", RectangleValue (Rectangle (-150, 150, -150, 150)));
 
 	for(int i=0;i<4;i++){
 		channel[i] = YansWifiChannelHelper::Default();
@@ -176,14 +178,11 @@ int main(int argc,char *argv[]){
 		wifi[i].SetRemoteStationManager("ns3::AarfWifiManager");
 
 
-		staDevices[i] = wifi[i].Install(phy[i],macW,wifiStaNodes[i]); 
+		staDevices[i] = wifi[i].Install(phy[i],macW,wifiStaNodes[i]);
 		apDevices[i] = wifi[i].Install(phy[i],macA,wifiApNode[i]);
 
-		// Installing mobility models on the STA nodes
-		mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                             "Bounds", RectangleValue (Rectangle (-150, 150, -150, 150)));
 		mobility.Install(wifiStaNodes[i]);
-		
+
 		// Installing mobility (fixed position) on the AP nodes
 		mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 		mobility.Install (wifiApNode[i]); // 8
@@ -202,12 +201,12 @@ int main(int argc,char *argv[]){
 		stack.Install(wifiStaNodes[i]);
 	}
 
-	// Assigning IP adresses to our devce interfaces 
+	// Assigning IP adresses to our devce interfaces
 	Ipv4AddressHelper address;
 	Ipv4InterfaceContainer p2pInterfaces[nP2p];
 	Ipv4InterfaceContainer csmaInterfaces[2];
 
-	// P2P 
+	// P2P
 	for(int i=0;i<nP2p;i++){
 		stringstream ss;
 		ss << "10.1." << i+1 << ".0";
@@ -215,7 +214,7 @@ int main(int argc,char *argv[]){
 		p2pInterfaces[i] = address.Assign(p2pDevices[i]);
 	}
 
-	//CSMA 
+	//CSMA
 	for(int i=0;i<2;i++){
 		stringstream ss;
 		ss << "10.1." << i+6 << ".0";
@@ -308,4 +307,3 @@ int main(int argc,char *argv[]){
 
   return 0;
 }
-
