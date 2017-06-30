@@ -11,13 +11,13 @@
 #include <sstream>
 
 /* Requisitos:
- * a) Ao menos duas redes Ethernet (padrao 802.3);
- * b) Quatro redes sem fio (padrao 802.11x);
- * c) Um minimo de 10 clientes em todas as redes.
+ * a) Ao menos duas redes Ethernet (padrão 802.3);
+ * b) Quatro redes sem fio (padrão 802.11x);
+ * c) Um mínimo de 10 clientes em todas as redes.
  *
- * Os ambientes das redes (a) e (b) devem ser dominios diferentes de colisao.
- * Na rede 802.3 deve existir um servidor de aplicacao que precisa ser acessado por nos/clientes das outras redes.
- * A escolha do servico a ser implementado eh livre.
+ * Os ambientes das redes (a) e (b) devem ser domínios diferentes de colisão.
+ * Na rede 802.3 deve existir um servidor de aplicação que precisa ser acessado por nós/clientes das outras redes.
+ * A escolha do serviço a ser implementado é livre.
  */
 
 // Topologia:
@@ -164,9 +164,9 @@ int main(int argc,char *argv[]){
                                  "DeltaY", DoubleValue (10.0),
                                  "GridWidth", UintegerValue (sqrt(nWifi)),
                                  "LayoutType", StringValue ("RowFirst"));
-  // Installing mobility models on the STA nodes
-	mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
-                          "Bounds", RectangleValue (Rectangle (-150, 150, -150, 150)));
+	// Installing mobility models on the STA nodes
+ 	mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                           "Bounds", RectangleValue (Rectangle (-150, 150, -150, 150)));
 
 	for(int i=0;i<4;i++){
 		channel[i] = YansWifiChannelHelper::Default();
@@ -177,10 +177,10 @@ int main(int argc,char *argv[]){
 		phy[i].SetChannel(channel[i].Create());
 		wifi[i].SetRemoteStationManager("ns3::AarfWifiManager");
 
-
 		staDevices[i] = wifi[i].Install(phy[i],macW,wifiStaNodes[i]);
 		apDevices[i] = wifi[i].Install(phy[i],macA,wifiApNode[i]);
 
+		// Installing mobility models on the STA nodes
 		mobility.Install(wifiStaNodes[i]);
 
 		// Installing mobility (fixed position) on the AP nodes
@@ -188,7 +188,6 @@ int main(int argc,char *argv[]){
 		mobility.Install (wifiApNode[i]); // 8
 
 	}
-
 
 	/***** REDE *****/
 	// Installing protocol stacks
@@ -231,14 +230,12 @@ int main(int argc,char *argv[]){
 		address.Assign(apDevices[i]);
 	}
 
-
-
   // Setting up the echo port
   UdpEchoServerHelper echoServer (9);
   // SERVER => The rightmost node
   ApplicationContainer serverApps = echoServer.Install (csmaNodes[0].Get (nCsma));
   serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (10.0));
+  serverApps.Stop (Seconds (70.0));
   // SERVER <=> CLIENT
   UdpEchoClientHelper echoClient (csmaInterfaces[0].GetAddress (nCsma), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
@@ -252,12 +249,9 @@ int main(int argc,char *argv[]){
 		clientApps.Add(echoClient.Install (csmaNodes[i]));
 
   clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (10.0));
+  clientApps.Stop (Seconds (70.0));
   // Enabling internetwork
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-
-  // Simulation
-  Simulator::Stop (Seconds (10.0));
 
   if (tracing == true){
       pointToPoint.EnablePcapAll ("proj_2_tr1");
