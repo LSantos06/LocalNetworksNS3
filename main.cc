@@ -11,13 +11,13 @@
 #include <sstream>
 
 /* Requisitos:
- * a) Ao menos duas redes Ethernet (padrão 802.3);
- * b) Quatro redes sem fio (padrão 802.11x);
- * c) Um mínimo de 10 clientes em todas as redes.
+ * a) Ao menos duas redes Ethernet (padrao 802.3);
+ * b) Quatro redes sem fio (padrao 802.11x);
+ * c) Um minimo de 10 clientes em todas as redes.
  *
- * Os ambientes das redes (a) e (b) devem ser domínios diferentes de colisão.
- * Na rede 802.3 deve existir um servidor de aplicação que precisa ser acessado por nós/clientes das outras redes.
- * A escolha do serviço a ser implementado é livre.
+ * Os ambientes das redes (a) e (b) devem ser dominios diferentes de colisao.
+ * Na rede 802.3 deve existir um servidor de aplicacao que precisa ser acessado por nos/clientes das outras redes.
+ * A escolha do servico a ser implementado eh livre.
  */
 
 // Topologia:
@@ -278,8 +278,8 @@ int main(int argc,char *argv[]){
   Ptr<FlowMonitor> monitor = flowmon.InstallAll ();
 
   NS_LOG_UNCOND(":::::::::: SIMULATION ::::::::::\n");
-  // Run simulation for 10 seconds
-  Simulator::Stop (Seconds (10));
+  // Run simulation for 70 seconds
+  Simulator::Stop (Seconds (70));
   Simulator::Run ();
 
   // Print per flow statistics in xml file
