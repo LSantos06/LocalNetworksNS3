@@ -11,8 +11,8 @@ O trabalho consiste na implementação no ambiente do _NS-3_ de uma topologia qu
 
 ### Integrantes do grupo
 * Eduardo Scartezini - 14/0130784
-  - [X] _Versão do ns-3_: 
-  - [X] _Sistema Operacional_: 
+  - [X] _Versão do ns-3_: ns-allinone-3.25
+  - [X] _Sistema Operacional_: Ubuntu 14.04.5 LTS
 * Lucas Santos - 14/0151010
   - [X] _Versão do ns-3_: ns-allinone-3.25
   - [X] _Sistema Operacional_: elementary OS 0.4 Loki (64-bit) Built on "Ubuntu 16.04.2 LTS"
